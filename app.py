@@ -44,10 +44,17 @@ span[data-baseweb="tag"] {
     background: #fff8f0 !important;
     border: 1px solid #fda85b !important;
     border-radius: 999px !important;
-    padding: 3px 6px 3px 11px !important;
+    padding: 3px 8px 3px 11px !important;
     margin: 2px 4px 2px 0 !important;
     height: auto !important;
     line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+span[data-baseweb="tag"]:hover {
+    background: #fde8d0 !important;
+    cursor: pointer !important;
 }
 /* Label text inside the pill */
 span[data-baseweb="tag"] span:first-child {
@@ -55,17 +62,18 @@ span[data-baseweb="tag"] span:first-child {
     font-size: 0.83rem !important;
     font-weight: 500 !important;
 }
-/* × icon — muted by default, vivid on hover */
-span[data-baseweb="tag"] span[title="Clear"] {
-    color: #e0b898 !important;
-    font-size: 14px !important;
+/* × icon wrapper — always red, pill darkens on hover */
+span[data-baseweb="tag"] span[title="Clear"],
+span[data-baseweb="tag"] [role="button"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    color: #c0392b !important;
+    line-height: 1 !important;
 }
-span[data-baseweb="tag"]:hover span[title="Clear"] {
-    color: #b84800 !important;
-}
-/* Strip all chrome from the multiselect wrapper */
-div[data-testid="stMultiSelect"] > label  { display: none !important; }
-div[data-testid="stMultiSelect"] > div    { box-shadow: none !important; }
+
+/* ── Strip all chrome from every multiselect ─────────────────── */
+div[data-testid="stMultiSelect"] > label { display: none !important; }
+div[data-testid="stMultiSelect"] > div   { box-shadow: none !important; }
 div[data-testid="stMultiSelect"] > div > div:first-child {
     border: none !important;
     background: transparent !important;
@@ -73,8 +81,49 @@ div[data-testid="stMultiSelect"] > div > div:first-child {
     min-height: 0 !important;
     gap: 0 !important;
 }
+/* Hide text input, dropdown chevron, and global clear button */
+div[data-testid="stMultiSelect"] input              { display: none !important; }
+div[data-testid="stMultiSelect"] svg                { display: none !important; }
+div[data-testid="stMultiSelect"] [data-baseweb="clear-icon"] { display: none !important; }
+/* × icon inside pills — force red */
+div[data-testid="stMultiSelect"] span[data-baseweb="tag"] svg,
+div[data-testid="stMultiSelect"] span[data-baseweb="tag"] svg path {
+    display: inline-flex !important;
+    fill: #c0392b !important;
+    color: #c0392b !important;
+    width: 12px !important;
+    height: 12px !important;
+}
+
+/* ── Gray pills for "couldn't interpret" unmapped terms ───────── */
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"] {
+    background: #f5f5f5 !important;
+    border: 1px solid #ddd !important;
+}
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"]:hover {
+    background: #e8e8e8 !important;
+}
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"] span:first-child {
+    color: #888 !important;
+}
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"] span[title="Clear"] {
+    color: #c5c5c5 !important;
+}
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"]:hover span[title="Clear"] {
+    color: #555 !important;
+}
+/* × inside gray (unmapped) pills */
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"] svg,
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"] svg path {
+    fill: #c5c5c5 !important;
+}
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"]:hover svg,
+div:has(.unmapped-marker) ~ div span[data-baseweb="tag"]:hover svg path {
+    fill: #555 !important;
+}
+
 /* ── "add filter" link-style button ───────────────────────────── */
-button[data-testid="add-filter-btn"] { display: none; }   /* fallback; real selector below */
+button[data-testid="add-filter-btn"] { display: none; }
 div[data-testid="stButton"]:has(button[kind="secondary"].add-filter) button {
     font-size: 0.78rem !important;
     padding: 0 !important;
@@ -245,15 +294,13 @@ def render_filter_panel():
     ms_key = "fp__" + "_".join(sorted(active.keys()))
 
     with st.container():
-        # Compact heading
-        st.markdown(
-            '<p style="font-size:0.75rem;font-weight:600;color:#c0a898;'
-            'letter-spacing:0.06em;margin:0 0 4px 0;">🧠 UNDERSTOOD</p>',
-            unsafe_allow_html=True,
-        )
-
-        # Inline wrapping orange pills with built-in × removal.
+        # Understood filters — header + pills only shown when filters exist.
         if filter_labels:
+            st.markdown(
+                '<p style="font-size:0.75rem;font-weight:600;color:#c0a898;'
+                'letter-spacing:0.06em;margin:0 0 4px 0;">🧠 UNDERSTOOD</p>',
+                unsafe_allow_html=True,
+            )
             selected = st.multiselect(
                 label="filters",
                 options=filter_labels,
@@ -269,20 +316,27 @@ def render_filter_panel():
                         del st.session_state.active_filters[k]
                 st.rerun()
 
-        # Unmapped terms — smaller, gray, no interactivity.
+        # Unmapped terms — gray removable pills.
         if unmapped:
-            gray_pills = "".join(
-                f'<span style="display:inline-block;background:#f2f2f2;'
-                f'border:1px solid #e0e0e0;color:#aaa;border-radius:999px;'
-                f'padding:1px 9px;font-size:0.76rem;margin:1px 3px 1px 0;">'
-                f'{t}</span>'
-                for t in unmapped
-            )
             st.markdown(
-                f'<p style="font-size:0.76rem;color:#ccc;margin:5px 0 2px 0;">'
-                f"couldn't interpret: {gray_pills}</p>",
+                '<p style="font-size:0.76rem;color:#888;margin:5px 0 2px 0;">'
+                "couldn't interpret: <span class='unmapped-marker'></span></p>",
                 unsafe_allow_html=True,
             )
+            um_key = "um__" + "__".join(sorted(unmapped))
+            selected_unmapped = st.multiselect(
+                label="unmapped",
+                options=unmapped,
+                default=unmapped,
+                label_visibility="collapsed",
+                key=um_key,
+            )
+            removed_unmapped = set(unmapped) - set(selected_unmapped)
+            if removed_unmapped:
+                st.session_state.unmapped_terms = [
+                    t for t in st.session_state.unmapped_terms if t not in removed_unmapped
+                ]
+                st.rerun()
 
         # Subtle "add filter" link, left-aligned.
         if st.button("＋ add filter", key="toggle_manual"):
