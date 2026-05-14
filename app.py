@@ -434,8 +434,8 @@ def main():
     st.markdown(PILL_CSS, unsafe_allow_html=True)
 
     st.markdown(
-        "<h1 style='color:#fc8019;margin-bottom:4px;'>🍱 Swiggy Intent Search "
-        "<span style='font-size:15px;color:#bbb;font-weight:400'>(Prototype)</span></h1>",
+        "<h1 style='color:#fc8019;margin-bottom:4px;font-size:clamp(1.4rem, 5vw, 2rem);'>🍱 Swiggy Intent Search "
+        "<span style='font-size:clamp(0.7rem, 2vw, 0.95rem);color:#bbb;font-weight:400;'>(Prototype)</span></h1>",
         unsafe_allow_html=True,
     )
 
